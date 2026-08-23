@@ -7,9 +7,10 @@ their own module so the bulk of ``client.py`` stays free of nio internals.
 Every patch is:
 
 - **Idempotent** — guarded by a ``_matrix_e2ee_*_patched`` flag on the class.
-- **No-op when nio is absent** — each ``_patch_nio_sas_*()`` wrapper wraps the
-  ``from nio … import …`` in ``try/except`` so unit tests (which use ``FakeNio``)
-  run without nio installed.
+- **No-op when nio is absent** — SAS patch targets and the matrix-nio version
+  are loaded once at import under ``try/except``, so unit tests (which use
+  ``FakeNio``) run without nio installed and runtime patch application does no
+  metadata read or dynamic import.
 
 Call :func:`apply_nio_compat_patches` once before building a client.
 """
@@ -30,9 +31,26 @@ _LOGGER = logging.getLogger(__name__)
 # installed version drifts from the pin in ``manifest.json``.
 NIO_COMPAT_VERSION = "0.26.0"
 
+# One named sentinel for the version cache. Compare with identity (``is``);
+# never construct a fresh ``object()`` in the comparison.
+_UNSET = object()
+_INSTALLED_NIO_VERSION: str | object | None = _UNSET
 
-def _installed_nio_version() -> str | None:
-    """Return the installed matrix-nio version, or None when it is absent."""
+try:
+    from nio.api import Api  # pragma: no cover
+    from nio.crypto.sas import Sas, SasState  # pragma: no cover
+    from nio.event_builders import ToDeviceMessage  # pragma: no cover
+    from nio.exceptions import LocalProtocolError  # pragma: no cover
+except Exception:  # noqa: BLE001 — nio may not be installed (tests)
+    Api = None
+    Sas = None
+    SasState = None
+    ToDeviceMessage = None
+    LocalProtocolError = None
+
+
+def _read_installed_nio_version() -> str | None:
+    """Read the installed matrix-nio version from package metadata."""
     try:
         from importlib.metadata import PackageNotFoundError, version
     except ImportError:  # pragma: no cover - Python < 3.8
@@ -41,6 +59,15 @@ def _installed_nio_version() -> str | None:
         return version("matrix-nio")
     except PackageNotFoundError:
         return None
+
+
+def _installed_nio_version() -> str | None:
+    """Return the cached matrix-nio version, or None when it is absent."""
+    global _INSTALLED_NIO_VERSION
+    if _INSTALLED_NIO_VERSION is _UNSET:
+        _INSTALLED_NIO_VERSION = _read_installed_nio_version()
+    installed = _INSTALLED_NIO_VERSION
+    return None if installed is _UNSET else installed  # type: ignore[return-value]
 
 
 def _warn_version_mismatch() -> None:
@@ -81,9 +108,7 @@ def _apply_sas_timeout_patch(sas_cls: Any, canceled_state: Any) -> None:
 
 def _patch_nio_sas_timeout() -> None:
     """Work around nio 0.26.0 ``_last_event_time`` bug. No-op when nio is absent."""
-    try:
-        from nio.crypto.sas import Sas, SasState
-    except Exception:  # noqa: BLE001 — nio may not be installed (tests)
+    if Sas is None or SasState is None:
         return
     _apply_sas_timeout_patch(Sas, SasState.canceled)
 
@@ -139,10 +164,7 @@ def _apply_sas_commitment_patch(
 
 def _patch_nio_sas_commitment() -> None:
     """Fix nio 0.26.0 SAS commitment encoding. No-op when nio is absent."""
-    try:
-        from nio.api import Api
-        from nio.crypto.sas import Sas
-    except Exception:  # noqa: BLE001 — nio may not be installed (tests)
+    if Sas is None or Api is None:
         return
     _apply_sas_commitment_patch(Sas, Api.to_canonical_json)
 
@@ -170,9 +192,7 @@ def _apply_sas_emoji_patch(sas_cls: Any) -> None:
 
 def _patch_nio_sas_emoji() -> None:
     """Fix nio 0.26.0 SAS emoji rendering. No-op when nio is absent."""
-    try:
-        from nio.crypto.sas import Sas
-    except Exception:  # noqa: BLE001 — nio may not be installed (tests)
+    if Sas is None:
         return
     _apply_sas_emoji_patch(Sas)
 
@@ -284,11 +304,12 @@ def _apply_sas_mac_patch(
 
 def _patch_nio_sas_mac() -> None:
     """Fix nio 0.26.0 legacy SAS MAC encoding. No-op when nio is absent."""
-    try:
-        from nio.crypto.sas import Sas, SasState
-        from nio.event_builders import ToDeviceMessage
-        from nio.exceptions import LocalProtocolError
-    except Exception:  # noqa: BLE001 — nio may not be installed (tests)
+    if (
+        Sas is None
+        or SasState is None
+        or ToDeviceMessage is None
+        or LocalProtocolError is None
+    ):
         return
     _apply_sas_mac_patch(Sas, ToDeviceMessage, LocalProtocolError, SasState)
 
@@ -300,3 +321,8 @@ def apply_nio_compat_patches() -> None:
     _patch_nio_sas_commitment()
     _patch_nio_sas_emoji()
     _patch_nio_sas_mac()
+
+
+# Populate the version cache at import so setup-time patch application never
+# reads package metadata on the event loop.
+_installed_nio_version()

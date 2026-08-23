@@ -387,7 +387,12 @@ class MatrixE2EEClient:
             device_id=session.device_id,
         )
         self.nio = nio
-        nio.restore_login(session.user_id, session.device_id, session.access_token)
+        await asyncio.to_thread(
+            nio.restore_login,
+            session.user_id,
+            session.device_id,
+            session.access_token,
+        )
         whoami = await nio.whoami()
         if _is_error_response(whoami):
             if _is_soft_logout(whoami):
@@ -513,10 +518,15 @@ class MatrixE2EEClient:
                 "session is soft-logged-out; call matrix_e2ee.reauthenticate",
             )
 
-    def _restore_session_token(self, nio: Any, session: MatrixSession) -> None:
+    async def _restore_session_token(self, nio: Any, session: MatrixSession) -> None:
         restore = getattr(nio, "restore_login", None)
         if restore is not None:
-            restore(session.user_id, session.device_id, session.access_token)
+            await asyncio.to_thread(
+                restore,
+                session.user_id,
+                session.device_id,
+                session.access_token,
+            )
             return
         nio.user_id = session.user_id
         nio.device_id = session.device_id
@@ -612,13 +622,13 @@ class MatrixE2EEClient:
                 ERROR_LOGIN_FAILED, "reauthenticate login failed"
             ) from err
         if _is_error_response(response):
-            self._restore_session_token(nio, session)
+            await self._restore_session_token(nio, session)
             self._password = previous_password
             self._install_secret_filter()
             self._emit_error(ERROR_LOGIN_FAILED)
             raise MatrixE2EEError(ERROR_LOGIN_FAILED, "reauthenticate login failed")
         if _has_unsupported_token_lifetime(response, nio):
-            self._restore_session_token(nio, session)
+            await self._restore_session_token(nio, session)
             self._password = previous_password
             self._install_secret_filter()
             self._emit_error(ERROR_REFRESH_TOKEN_UNSUPPORTED)
@@ -627,7 +637,7 @@ class MatrixE2EEClient:
                 "short-lived or refresh tokens are not supported",
             )
         if nio.device_id != session.device_id or nio.user_id != session.user_id:
-            self._restore_session_token(nio, session)
+            await self._restore_session_token(nio, session)
             self._password = previous_password
             self._install_secret_filter()
             self._emit_error(ERROR_DEVICE_MISMATCH)
@@ -636,7 +646,7 @@ class MatrixE2EEClient:
                 "homeserver returned a different device; refusing to replace token",
             )
         if not nio.access_token:
-            self._restore_session_token(nio, session)
+            await self._restore_session_token(nio, session)
             self._password = previous_password
             self._install_secret_filter()
             self._emit_error(ERROR_LOGIN_FAILED)

@@ -7,6 +7,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 import custom_components.matrix_e2ee as matrix_e2ee
+import custom_components.matrix_e2ee.diagnostics as diagnostics_module
 from custom_components.matrix_e2ee.client import MatrixE2EEClient
 from custom_components.matrix_e2ee.const import CONF_HOMESERVER, CONF_USERNAME, DOMAIN
 from custom_components.matrix_e2ee.diagnostics import (
@@ -95,3 +96,22 @@ async def test_diagnostics_returns_redacted_snapshot(
     assert result["client"]["encryption_enabled"] is True
 
     await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_diagnostics_tolerates_missing_manifest(
+    hass: HomeAssistant, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A loader failure must not prevent safe diagnostics from downloading."""
+    entry = _make_entry(hass)
+
+    async def unavailable_integration(*_args) -> None:
+        raise RuntimeError("integration metadata unavailable")
+
+    monkeypatch.setattr(
+        diagnostics_module, "async_get_integration", unavailable_integration
+    )
+
+    result = await async_get_config_entry_diagnostics(hass, entry)
+
+    assert result["integration_version"] is None
+    assert result["client"] is None

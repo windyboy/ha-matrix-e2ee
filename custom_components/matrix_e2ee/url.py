@@ -41,7 +41,10 @@ def homeserver_origin(url: str) -> str:
     host = (parts.hostname or "").lower()
     if not host:
         return value
-    return _format_authority(scheme, host, parts.port)
+    try:
+        return _format_authority(scheme, host, parts.port)
+    except ValueError:
+        return value
 
 
 def normalize_homeserver(url: str) -> str:
@@ -77,4 +80,7 @@ def normalize_homeserver(url: str) -> str:
             raise HomeserverURLInvalid("http_not_allowed")
     elif scheme != "https":
         raise HomeserverURLInvalid("unsupported_scheme")
-    return _format_authority(scheme, host, parts.port)
+    try:
+        return _format_authority(scheme, host, parts.port)
+    except ValueError as err:
+        raise HomeserverURLInvalid("invalid") from err

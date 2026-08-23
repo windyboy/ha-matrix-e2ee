@@ -5,6 +5,12 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.13] - 2026-08-22
+
+### Fixed
+
+- Avoid blocking I/O on the event loop during config-entry restore (W1N-208): preload matrix-nio version and SAS patch imports at `nio_compat` module load, and run `restore_login` via `asyncio.to_thread`.
+
 ## [0.3.11] - 2026-08-19
 
 ### Fixed
@@ -65,6 +71,7 @@ Incremental SAS wizard, peer-initiated verification, and related fixes. See git 
 - M3: SAS services and events.
 - M4: soft logout / `reauthenticate`, store-loss runbook, diagnostics foundation.
 
+[0.3.13]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.13
 [0.3.11]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.11
 [0.3.10]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.10
 [0.3.9]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.9

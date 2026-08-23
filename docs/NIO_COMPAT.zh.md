@@ -6,6 +6,8 @@
 
 本集成将 `matrix-nio[e2e]` 固定为 `0.26.0`，并在创建客户端前对 `nio.crypto.sas.Sas` 应用四项运行时兼容性修正。这些修正位于 `custom_components/matrix_e2ee/nio_compat.py`，由 `_make_nio()` 调用 `apply_nio_compat_patches()` 统一启用。
 
+SAS 补丁依赖和已安装的 matrix-nio 版本在导入 `nio_compat` 时加载一次。之后 `apply_nio_compat_patches()` 只做 CPU 工作：不会在事件循环上读取包元数据，也不会再 import `nio.crypto.sas`。
+
 这些修正只针对 0.26.0 验证过。如果实际安装版本不同，集成会记录警告。每项修正都可以重复应用；未安装 nio 时会直接跳过，以便使用 `FakeNio` 运行单元测试。
 
 ## 修正概览
@@ -72,6 +74,16 @@ matrix-nio 0.26.0 只协商 `hkdf-hmac-sha256`（v1），但默认调用 `calcul
 7. 运行 `tests/test_nio_compat.py` 和完整测试套件。
 8. 使用真实 Matrix homeserver 与 Element 完成一次双向 SAS 验证。
 9. 在**三处同步**更新已确认可用的版本：本文档、`nio_compat.py` 中的 `NIO_COMPAT_VERSION`、`manifest.json` 中的 `matrix-nio[e2e]==…` 固定版本。
+
+## Config entry 恢复（HA Core 2026.8.2+）
+
+恢复线上 config entry 后，Home Assistant 日志中不得出现针对以下路径的 blocking-call 警告：
+
+- `matrix-nio-*.dist-info/METADATA`
+- `jsonschema_specifications/schemas`
+- `matrix_e2ee_store/*trusted_devices`
+
+版本元数据和 SAS 依赖在导入 `nio_compat` 时预加载。`restore_login` 通过 `asyncio.to_thread` 执行。不要把 `apply_nio_compat_patches()` 包进线程：CPython 的 import 不是线程安全的。
 
 ## 相关文档
 

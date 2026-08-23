@@ -6,6 +6,8 @@
 
 The integration pins `matrix-nio[e2e]` to `0.26.0` and applies four runtime compatibility fixes to `nio.crypto.sas.Sas` before creating a client. They live in `custom_components/matrix_e2ee/nio_compat.py`; `_make_nio()` enables them through `apply_nio_compat_patches()`.
 
+SAS patch targets and the installed matrix-nio version are loaded once at `nio_compat` import. After that, `apply_nio_compat_patches()` is CPU-only: it does not read package metadata or import `nio.crypto.sas` on the event loop.
+
 The fixes have been validated only against 0.26.0. The integration logs a warning if another version is installed. Each fix is idempotent and skips execution when nio is absent so unit tests can run with `FakeNio`.
 
 ## Summary
@@ -72,6 +74,16 @@ Before upgrading `matrix-nio`:
 7. Run `tests/test_nio_compat.py` and the complete test suite.
 8. Complete an end-to-end SAS verification with Element on a real Matrix homeserver.
 9. Update the validated version in **three places together**: this document, `NIO_COMPAT_VERSION` in `nio_compat.py`, and the `matrix-nio[e2e]==…` pin in `manifest.json`.
+
+## Config-entry restore (HA Core 2026.8.2+)
+
+After restoring a live config entry, Home Assistant logs must not contain blocking-call warnings for:
+
+- `matrix-nio-*.dist-info/METADATA`
+- `jsonschema_specifications/schemas`
+- `matrix_e2ee_store/*trusted_devices`
+
+Version metadata and SAS imports are preloaded when `nio_compat` is imported. `restore_login` runs in `asyncio.to_thread`. Do not wrap `apply_nio_compat_patches()` in a thread: CPython imports are not thread-safe.
 
 ## Related documentation
 

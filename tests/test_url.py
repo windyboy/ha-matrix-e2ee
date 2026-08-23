@@ -63,3 +63,20 @@ def test_origin_distinguishes_hosts() -> None:
     assert homeserver_origin("https://a.example.org") != homeserver_origin(
         "https://b.example.org"
     )
+
+
+@pytest.mark.parametrize("raw", ["https://[broken", "https://matrix.example.org:bad"])
+def test_origin_returns_malformed_input_unchanged(raw: str) -> None:
+    """Origin extraction is best-effort and never rejects malformed input."""
+    assert homeserver_origin(raw) == raw
+
+
+def test_origin_returns_input_without_a_host() -> None:
+    assert homeserver_origin("https://") == "https://"
+
+
+@pytest.mark.parametrize("raw", ["https://[broken", "https://matrix.example.org:bad"])
+def test_normalize_homeserver_rejects_malformed_url(raw: str) -> None:
+    with pytest.raises(HomeserverURLInvalid) as excinfo:
+        normalize_homeserver(raw)
+    assert excinfo.value.reason == "invalid"

@@ -208,3 +208,35 @@ async def test_import_creates_entry_with_options(hass: HomeAssistant) -> None:
         CONF_VERIFICATION_PEER_USERS: [],
         CONF_COMMAND_PREFIX: "!",
     }
+
+
+def test_error_helpers_return_fallbacks() -> None:
+    """Unknown error codes use the generic user-facing error strings."""
+    assert config_flow._base_error("unknown") == "cannot_connect"
+    assert config_flow._homeserver_error("unknown") == "homeserver_invalid"
+
+
+async def test_import_without_data_aborts_unknown(hass: HomeAssistant) -> None:
+    """An import without a YAML payload cannot be configured."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": SOURCE_IMPORT}, data=None
+    )
+    assert result["type"] == "abort"
+    assert result["reason"] == "unknown"
+
+
+async def test_import_with_invalid_homeserver_aborts_unknown(
+    hass: HomeAssistant,
+) -> None:
+    """Malformed imported homeserver URLs are rejected before login."""
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN,
+        context={"source": SOURCE_IMPORT},
+        data={
+            CONF_HOMESERVER: "http://invalid.example",
+            CONF_USERNAME: USERNAME,
+            CONF_PASSWORD: PASSWORD,
+        },
+    )
+    assert result["type"] == "abort"
+    assert result["reason"] == "unknown"
