@@ -1,8 +1,6 @@
 # matrix-nio 0.26.0 compatibility
 
-> Audience: developers maintaining the SAS compatibility layer or upgrading matrix-nio.
->
-> Language: [English](NIO_COMPAT.md) | [中文](NIO_COMPAT.zh.md)
+[English](NIO_COMPAT.md) | [中文](NIO_COMPAT.zh.md)
 
 The integration pins `matrix-nio[e2e]` to `0.26.0` and applies four runtime compatibility fixes to `nio.crypto.sas.Sas` before creating a client. They live in `custom_components/matrix_e2ee/nio_compat.py`; `_make_nio()` enables them through `apply_nio_compat_patches()`.
 

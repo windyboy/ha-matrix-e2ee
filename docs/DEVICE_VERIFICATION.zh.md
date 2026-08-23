@@ -1,8 +1,6 @@
 # 设备验证
 
-> 适用对象：使用 Element 验证 Home Assistant 机器人设备的管理员。
->
-> 语言：[English](DEVICE_VERIFICATION.md) | [中文](DEVICE_VERIFICATION.zh.md)
+[English](DEVICE_VERIFICATION.md) | [中文](DEVICE_VERIFICATION.zh.md)
 
 设备验证用于确认 Element 中显示的 `Home Assistant matrix_e2ee` 确实是你的 Home Assistant 机器人设备。验证成功后，Element 与机器人会互相信任对方的设备。
 

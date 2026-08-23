@@ -1,8 +1,6 @@
 # 开发说明
 
-> 适用对象：开发、测试和发布 `matrix_e2ee` 的贡献者。
->
-> 语言：[English](DEVELOPMENT.md) | [中文](DEVELOPMENT.zh.md)
+[English](DEVELOPMENT.md) | [中文](DEVELOPMENT.zh.md)
 
 本仓库提供 Home Assistant 自定义集成 `custom_components/matrix_e2ee`，不会覆盖 Home Assistant 内置的 `matrix` 域。
 

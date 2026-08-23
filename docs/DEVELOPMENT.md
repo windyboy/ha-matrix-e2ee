@@ -1,8 +1,6 @@
 # Development notes
 
-> Audience: contributors developing, testing, and releasing `matrix_e2ee`.
->
-> Language: [English](DEVELOPMENT.md) | [中文](DEVELOPMENT.zh.md)
+[English](DEVELOPMENT.md) | [中文](DEVELOPMENT.zh.md)
 
 This repository provides the Home Assistant custom integration `custom_components/matrix_e2ee`. It does not override Home Assistant's built-in `matrix` domain.
 

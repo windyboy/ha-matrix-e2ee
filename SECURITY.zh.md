@@ -1,8 +1,8 @@
 # 安全
 
-> 语言：[English](SECURITY.md) | [中文](SECURITY.zh.md)
+[English](SECURITY.md) | [中文](SECURITY.zh.md)
 
-`matrix_e2ee` 以 Home Assistant 自定义集成的形式运行带端到端加密的专用 Matrix 机器人。本文记录信任模型与两种受支持的设备验证路径。
+`matrix_e2ee` 运行带端到端加密的专用 Matrix 机器人。本文说明其信任模型与两种受支持的设备验证方式。
 
 ## 信任边界
 

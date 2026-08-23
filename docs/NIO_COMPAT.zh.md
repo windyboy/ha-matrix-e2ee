@@ -1,8 +1,6 @@
 # matrix-nio 0.26.0 兼容性说明
 
-> 适用对象：维护 SAS 兼容层或准备升级 matrix-nio 的开发者。
->
-> 语言：[English](NIO_COMPAT.md) | [中文](NIO_COMPAT.zh.md)
+[English](NIO_COMPAT.md) | [中文](NIO_COMPAT.zh.md)
 
 本集成将 `matrix-nio[e2e]` 固定为 `0.26.0`，并在创建客户端前对 `nio.crypto.sas.Sas` 应用四项运行时兼容性修正。这些修正位于 `custom_components/matrix_e2ee/nio_compat.py`，由 `_make_nio()` 调用 `apply_nio_compat_patches()` 统一启用。
 

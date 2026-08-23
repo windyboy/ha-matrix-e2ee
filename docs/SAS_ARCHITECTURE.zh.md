@@ -1,10 +1,8 @@
 # SAS 设备验证架构
 
-> 适用对象：维护 `matrix_e2ee` 验证流程、信任策略或 matrix-nio 兼容层的开发者。
->
-> 语言：[English](SAS_ARCHITECTURE.md) | [中文](SAS_ARCHITECTURE.zh.md)
+[English](SAS_ARCHITECTURE.md) | [中文](SAS_ARCHITECTURE.zh.md)
 
-本文说明本集成如何实现 Matrix 短认证字符串（Short Authentication String，SAS）设备验证。用户操作步骤见[设备验证指南](DEVICE_VERIFICATION.zh.md)，四项 matrix-nio 修正见[兼容性说明](NIO_COMPAT.zh.md)。
+说明 `matrix_e2ee` 如何实现 Matrix 短认证字符串（SAS）设备验证。用户操作步骤见[设备验证指南](DEVICE_VERIFICATION.zh.md)，底层运行时修正见[兼容性说明](NIO_COMPAT.zh.md)。
 
 ## 范围
 
@@ -22,7 +20,7 @@
 - 自动信任同账号设备。
 - 在未验证设备与明文通信之间降级。
 
-协议背景以 Matrix 规范的 [Key verification framework](https://spec.matrix.org/latest/client-server-api/#key-verification-framework) 和 SAS 方法为准；本文只记录项目实际行为。
+底层协议以 Matrix 官方规范的 [Key verification framework](https://spec.matrix.org/latest/client-server-api/#key-verification-framework) 为准，本文侧重于本集成的具体实现逻辑与边界。
 
 ## 信任模型
 

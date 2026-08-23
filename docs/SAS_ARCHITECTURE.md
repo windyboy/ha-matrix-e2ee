@@ -1,10 +1,8 @@
 # SAS device-verification architecture
 
-> Audience: maintainers changing `matrix_e2ee` verification flows, trust policy, or matrix-nio compatibility.
->
-> Language: [English](SAS_ARCHITECTURE.md) | [中文](SAS_ARCHITECTURE.zh.md)
+[English](SAS_ARCHITECTURE.md) | [中文](SAS_ARCHITECTURE.zh.md)
 
-This document explains how the integration implements Matrix Short Authentication String (SAS) device verification. See the [device-verification guide](DEVICE_VERIFICATION.md) for user instructions and [matrix-nio compatibility](NIO_COMPAT.md) for the four runtime fixes.
+How `matrix_e2ee` implements Matrix Short Authentication String (SAS) device verification. For user walkthroughs, see [Device verification](DEVICE_VERIFICATION.md); for runtime patches, see [matrix-nio compatibility](NIO_COMPAT.md).
 
 ## Scope
 
@@ -22,7 +20,7 @@ The integration does not:
 - Automatically trust devices from the same account.
 - Downgrade from an unverified device to plaintext.
 
-The Matrix [Key verification framework](https://spec.matrix.org/latest/client-server-api/#key-verification-framework) and SAS method remain the protocol authority. This document records only project-specific behavior.
+Matrix's [Key verification framework](https://spec.matrix.org/latest/client-server-api/#key-verification-framework) defines the underlying protocol; this document details the integration's specific implementation.
 
 ## Trust model
 

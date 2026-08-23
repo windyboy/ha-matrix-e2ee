@@ -1,8 +1,6 @@
 # Device verification
 
-> Audience: administrators verifying the Home Assistant bot device with Element.
->
-> Language: [English](DEVICE_VERIFICATION.md) | [中文](DEVICE_VERIFICATION.zh.md)
+[English](DEVICE_VERIFICATION.md) | [中文](DEVICE_VERIFICATION.zh.md)
 
 Device verification confirms that `Home Assistant matrix_e2ee` in Element is your Home Assistant bot device. A successful verification makes Element and the bot trust each other's devices.
 

@@ -13,25 +13,22 @@ Home Assistant **custom** integration that runs a dedicated Matrix bot with a pe
 - [Installation](#installation)
 - [Security warning](#security-warning)
 - [Configuration (UI)](#configuration-ui)
-- [Services, events, and automations](#services-events-and-automations)
-- [Entities and diagnostics](#entities-and-diagnostics)
 - [Device verification](#device-verification)
-- [Error codes](#error-codes)
-- [Recovery runbook](#recovery-runbook)
 - [Roadmap](#roadmap)
 - [License](#license)
 
 ## Documentation
 
-| Document | Audience | Purpose |
-|---|---|---|
-| [Device verification](docs/DEVICE_VERIFICATION.md) ([中文](docs/DEVICE_VERIFICATION.zh.md)) | Administrators | SAS and fingerprint walkthrough |
-| [Security model](SECURITY.md) ([中文](SECURITY.zh.md)) | Everyone | Trust boundaries, storage, compromise / migration |
-| [SAS architecture](docs/SAS_ARCHITECTURE.md) ([中文](docs/SAS_ARCHITECTURE.zh.md)) | Maintainers | Trust rules, message flow, component responsibilities |
-| [matrix-nio compatibility](docs/NIO_COMPAT.md) ([中文](docs/NIO_COMPAT.zh.md)) | Maintainers | Runtime fixes and upgrade checklist |
-| [Development notes](docs/DEVELOPMENT.md) ([中文](docs/DEVELOPMENT.zh.md)) | Contributors | Environment, tests, CI, local install |
-| [Changelog](CHANGELOG.md) | Everyone | Release history |
-
+| Document | Description |
+|---|---|
+| [Usage guide](docs/USAGE.md) ([中文](docs/USAGE.zh.md)) | Services, events, automations, and diagnostic entities |
+| [Device verification](docs/DEVICE_VERIFICATION.md) ([中文](docs/DEVICE_VERIFICATION.zh.md)) | Step-by-step SAS and fingerprint verification walkthrough |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) ([中文](docs/TROUBLESHOOTING.zh.md)) | Error codes, recovery runbooks, and storage migration |
+| [Security model](SECURITY.md) ([中文](SECURITY.zh.md)) | Trust boundaries, storage protection, and compromise response |
+| [SAS architecture](docs/SAS_ARCHITECTURE.md) ([中文](docs/SAS_ARCHITECTURE.zh.md)) | SAS protocol flow, trust rules, and component boundaries |
+| [matrix-nio compatibility](docs/NIO_COMPAT.md) ([中文](docs/NIO_COMPAT.zh.md)) | Runtime compatibility fixes and upgrade checklist |
+| [Development notes](docs/DEVELOPMENT.md) ([中文](docs/DEVELOPMENT.zh.md)) | Environment setup, testing, CI, and local install |
+| [Changelog](CHANGELOG.md) | Release history |
 Current release: **v0.3.13** (see `custom_components/matrix_e2ee/manifest.json`).
 
 ## Installation
@@ -64,28 +61,7 @@ mkdir -p /config/custom_components
 cp -a /tmp/ha-matrix-e2ee/custom_components/matrix_e2ee /config/custom_components/matrix_e2ee
 ```
 
-The installed tree must be:
-
-```text
-<config>/custom_components/matrix_e2ee/manifest.json
-<config>/custom_components/matrix_e2ee/__init__.py
-<config>/custom_components/matrix_e2ee/binary_sensor.py
-<config>/custom_components/matrix_e2ee/client.py
-<config>/custom_components/matrix_e2ee/config_flow.py
-<config>/custom_components/matrix_e2ee/const.py
-<config>/custom_components/matrix_e2ee/diagnostics.py
-<config>/custom_components/matrix_e2ee/nio_compat.py
-<config>/custom_components/matrix_e2ee/storage.py
-<config>/custom_components/matrix_e2ee/url.py
-<config>/custom_components/matrix_e2ee/services.yaml
-<config>/custom_components/matrix_e2ee/strings.json
-<config>/custom_components/matrix_e2ee/translations/en.json
-<config>/custom_components/matrix_e2ee/translations/zh-Hans.json
-<config>/custom_components/matrix_e2ee/brand/icon.png
-<config>/custom_components/matrix_e2ee/brand/icon@2x.png
-<config>/custom_components/matrix_e2ee/brand/logo.png
-<config>/custom_components/matrix_e2ee/brand/logo@2x.png
-```
+The integration folder should be located at `<config>/custom_components/matrix_e2ee/`.
 
 ### 2. Add the integration in the UI
 
@@ -99,10 +75,9 @@ The password is required only on the very first login, when no session file exis
 
 **One bot per Home Assistant.** This integration supports a single config entry (`"single_config_entry": true`). The session file and crypto store are global to the integration, so a second entry would silently rebind them to a different account. Adding the integration a second time — even with a different username — is rejected with "Already configured".
 
-### 3. Migrating from the old YAML setup
+### 3. Migrating from YAML (legacy)
 
-If a `matrix_e2ee:` block is still present in `configuration.yaml`, Home Assistant imports it into a config entry on startup. The existing `.storage/matrix_e2ee_session.json` and `.storage/matrix_e2ee_store/` are reused — the device is **not** recreated. Once the import has created the entry, you can remove the YAML block.
-
+If a legacy `matrix_e2ee:` block is present in `configuration.yaml`, Home Assistant imports it into a config entry on startup and the YAML block can then be removed.
 ### 4. Dependencies
 
 On first load, Home Assistant installs `matrix-nio[e2e]==0.26.0` and its explicit E2EE dependencies (`vodozemac`, `peewee`, `cachetools`, `atomicwrites`) from `manifest.json`. The E2EE deps are listed explicitly because Home Assistant's requirement manager drops the `[e2e]` extra and would otherwise skip them. If any requirement fails to install, setup fails closed. Do not work around it with OS-level `pip` on Home Assistant OS.
@@ -114,7 +89,7 @@ After a successful first setup, HA writes:
 
 Those files must stay on the same persistent volume as Home Assistant. They are gitignored and must never be committed.
 
-If setup fails, check `matrix_e2ee_error` events and the Home Assistant log (tokens, pickle keys, and passwords must not appear there). Soft logout recovery is in the [runbook](#recovery-runbook).
+If setup fails, check `matrix_e2ee_error` events and the Home Assistant log (tokens, pickle keys, and passwords must not appear there). Soft logout recovery is in [Troubleshooting](docs/TROUBLESHOOTING.md) ([中文](docs/TROUBLESHOOTING.zh.md)).
 
 ## Security warning
 
@@ -125,7 +100,7 @@ Protect, back up, and revoke together:
 - `.storage/matrix_e2ee_session.json` (`user_id`, `device_id`, `access_token`, `pickle_key`)
 - `.storage/matrix_e2ee_store/` (Olm/Megolm, device trust, sync token)
 
-Rules that this project will not violate:
+Core security principles:
 
 - Dedicated **non-admin** Matrix bot account only
 - Never use Synapse admin login tokens for E2EE
@@ -165,214 +140,13 @@ Invalid input surfaces as Config Flow errors such as `homeserver_invalid`, `home
 | `allowed_users` | No inbound commands; send to allowed rooms is still permitted |
 | `verification_peer_users` | No inbound SAS from other accounts (only the bot's own account may initiate) |
 
-The old YAML block is no longer required. If a `matrix_e2ee:` block remains in `configuration.yaml`, it is imported into a config entry on startup (see [Migrating from the old YAML setup](#3-migrating-from-the-old-yaml-setup)).
-
-## Services, events, and automations
-
-### Services
-
-| Service | Fields | Notes |
-|---|---|---|
-| `matrix_e2ee.send_message` | `message`, `room_id` | Room must be in `allowed_rooms`. Fails closed on unverified devices in encrypted rooms. |
-| `matrix_e2ee.reauthenticate` | `password` | Soft logout only. Replaces access token; keeps `device_id` and crypto store. **Admin only.** |
-| `matrix_e2ee.start_verification` | `user_id`, `device_id` | Device must already be in the crypto store. Does not trust until confirm. **Admin only.** |
-| `matrix_e2ee.confirm_verification` | `transaction_id` | Only step that marks a device verified. **Admin only.** |
-| `matrix_e2ee.cancel_verification` | `transaction_id` | Cancels in-progress SAS. **Admin only.** |
-| `matrix_e2ee.get_fingerprint` | (none) | Emits `matrix_e2ee_fingerprint` with the bot's public keys. |
-| `matrix_e2ee.verify_device_by_fingerprint` | `user_id`, `device_id`, `ed25519` | One-sided local trust on exact match. **Admin only.** |
-
-Admin-only services are enforced by Home Assistant's admin-service helper.
-
-### Events
-
-| Event | Payload (no secrets) |
-|---|---|
-| `matrix_e2ee_command` | `room_id`, `sender`, `command`, `args` only — never the raw body |
-| `matrix_e2ee_error` | `code` plus non-secret context fields (see [Error codes](#error-codes)) |
-| `matrix_e2ee_verification` | `stage`, `transaction_id`, `user_id`, `device_id`; optional `emojis`, `expires_at` |
-| `matrix_e2ee_message_received` | `sender`, `room_id`; optional `event_id` |
-| `matrix_e2ee_verification_done` | `peer_user_id`, `peer_device_id`, `timestamp` |
-| `matrix_e2ee_fingerprint` | `user_id`, `device_id`, `ed25519`, `curve25519` — public keys only |
-
-SAS emoji comparison is available in the Options Flow wizard or, for advanced use, through the `matrix_e2ee_verification` event (`stage: sas`) in Developer Tools. Confirming is the only step that marks a device verified. Accepting an inbound SAS start is protocol continuation, not trust.
-
-Commands fire `matrix_e2ee_command` with `room_id`, `sender`, `command`, and `args` (plus `event_id` / `thread_parent` when Matrix provides them). Accepted inbound text also fires `matrix_e2ee_message_received`; message bodies are never exposed. This integration never calls `domain.service` itself. Map commands in automations.
-
-`notify.matrix_e2ee` is deferred. There is no `matrix_e2ee_message` event.
-
-### Example automations
-
-Send a message when a binary sensor trips:
-
-```yaml
-automation:
-  - alias: "Notify Matrix on front door"
-    trigger:
-      - platform: state
-        entity_id: binary_sensor.front_door
-        to: "on"
-    action:
-      - service: matrix_e2ee.send_message
-        data:
-          room_id: "!yourRoomId:example.org"
-          message: "Front door opened"
-```
-
-React to an inbound Matrix command (map `!ping` to a reply):
-
-```yaml
-automation:
-  - alias: "Matrix !ping"
-    trigger:
-      - platform: event
-        event_type: matrix_e2ee_command
-        event_data:
-          command: ping
-    action:
-      - service: matrix_e2ee.send_message
-        data:
-          room_id: "{{ trigger.event.data.room_id }}"
-          message: "pong"
-```
-
-Reauthenticate after soft logout (admin only; prefer the UI reauth prompt when available):
-
-```yaml
-automation:
-  - alias: "Matrix soft-logout reauth"
-    trigger:
-      - platform: event
-        event_type: matrix_e2ee_error
-        event_data:
-          code: soft_logout
-    action:
-      - service: matrix_e2ee.reauthenticate
-        data:
-          password: !secret matrix_bot_password
-```
-
-## Entities and diagnostics
-
-### Connection binary sensor
-
-The integration exposes a diagnostic connectivity entity:
-
-- **Entity**: `binary_sensor.*_connection` (name: **Connection**)
-- **Device class**: connectivity
-- **Category**: diagnostic
-- **On**: bot is connected and not soft-logged-out
-- **Attributes** (no secrets): `soft_logged_out`, `device_id`, `known_device_count`, `verified_peer_count`, `verified_peers` (up to 10 `{user_id, device_id}` pairs; peer devices only, never the bot itself)
-
-### Bot activity event
-
-`event.*_bot_activity` records the latest accepted activity with event types
-`message`, `command`, and `verification_done`. It shares the bot device with
-the Connection entity and is push-driven; it exposes no message body or key
-material.
-
-### Config Entry diagnostics
-
-**Settings → Devices & Services → Matrix E2EE → ⋮ → Download diagnostics** returns a redacted snapshot:
-
-| Field | Meaning |
-|---|---|
-| `integration_version` | Version from `manifest.json` |
-| `nio_version` | Installed `matrix-nio` version (if importable) |
-| `client.user_id` | Bot Matrix user ID |
-| `client.device_id` | Bot device ID |
-| `client.session_present` | Session file restored |
-| `client.store_present` | Crypto store directory present |
-| `client.soft_logged_out` | Soft-logout latch |
-| `client.encryption_enabled` | Always `true` for this integration |
-| `client.store_sync_tokens` | Always `true` for this integration |
-| `client.known_device_count` | Devices in the bot's device store |
-| `client.verified_peer_count` | Devices this bot marked verified |
-
-Never includes access tokens, pickle keys, passwords, message bodies, or crypto material.
+The old YAML block is no longer required. If a `matrix_e2ee:` block remains in `configuration.yaml`, it is imported into a config entry on startup (see [Migrating from YAML](#3-migrating-from-yaml-legacy)).
 
 ## Device verification
 
 Use **Settings → Devices & Services → Matrix E2EE → Configure → Verify device** and initiate verification for `Home Assistant matrix_e2ee` from Element. Compare every emoji and confirm only when both sides match. Devices are never trusted automatically, even when they belong to the same account.
 
 See [Device verification](docs/DEVICE_VERIFICATION.md) ([中文](docs/DEVICE_VERIFICATION.zh.md)) for the complete walkthrough, [Security](SECURITY.md) for the trust model, and [SAS architecture](docs/SAS_ARCHITECTURE.md) for implementation details.
-
-## Error codes
-
-`matrix_e2ee_error` events carry a `code` field (never secrets). Common codes:
-
-| Code | Meaning | Typical action |
-|---|---|---|
-| `soft_logout` | Access token invalid; same device may sign in again | Call `reauthenticate` or use the UI reauth prompt |
-| `hard_logout` | Token invalid and not soft logout | Delete session + store, remove integration, add again, re-verify |
-| `store_missing` | Crypto store directory missing | Treat as new device; do not reuse leftover session alone |
-| `session_missing` | Session file missing on restore path | First login / re-setup with password |
-| `session_corrupt` | Session file unreadable or invalid | Delete session (+ store if inconsistent), re-setup |
-| `restore_failed` | Could not restore client from session/store | Check logs; often ends in re-setup |
-| `password_required` | Password needed but not provided | Supply password to login / reauth |
-| `login_failed` | Homeserver rejected login | Check credentials and homeserver URL |
-| `device_mismatch` | Reauth would change `device_id` | Token not written; not a new-device upgrade path |
-| `room_not_allowed` | `room_id` not in `allowed_rooms` | Add room or send elsewhere |
-| `send_failed` | Send failed for a non-trust reason | Check connectivity and room membership |
-| `unverified_device` | Encrypted send blocked: unverified/unknown devices | Complete SAS (or fingerprint) for those devices |
-| `encryption_unavailable` | E2EE path not available | Check nio/store; should not happen on a healthy install |
-| `device_missing` | Target device not in crypto store | Wait for device keys / start verification only for known devices |
-| `fingerprint_mismatch` | Manual fingerprint did not match store | Recheck key; do not force trust |
-| `invalid_transaction` | Unknown or expired SAS `transaction_id` | Start a new verification |
-| `invalid_state` | Service called in an unexpected client state | Check soft-logout / connection; retry after recovery |
-| `verification_timeout` | Integration 240s verification window expired | Restart SAS from Element |
-| `verification_peer_denied` | Initiator not bot account and not in `verification_peer_users` | Adjust allowlist or initiate from an allowed user |
-| `refresh_token_unsupported` | Server offered refresh/short-lived token | Use long-lived password login without token refresh |
-
-## Recovery runbook
-
-Session JSON and the crypto store stay on the Home Assistant host. They are gitignored. This is a public repository: never commit tokens, pickle keys, passwords, or store files.
-
-Safe diagnostics (no token, pickle key, password, or message body) are available via **Download diagnostics** and the **Connection** binary sensor — see [Entities and diagnostics](#entities-and-diagnostics).
-
-**Session file and crypto store must always be backed up and restored together.** The session JSON alone cannot recover Megolm history; the store alone is useless without the matching `pickle_key` in the session file. Treat a mismatched pair as a new device.
-
-### Soft logout (`matrix_e2ee_error` code `soft_logout`)
-
-The access token is invalid, but the homeserver still allows the same device to sign in again. The integration **keeps** `.storage/matrix_e2ee_store/` and the existing `device_id`. Send, inbound commands, SAS, and sync stay blocked until reauthentication succeeds.
-
-At setup time a soft logout shows a **Re-authenticate** prompt on the integration (the native reauth flow). At runtime, reauthenticate via the service:
-
-1. Call `matrix_e2ee.reauthenticate` with the bot account password (Developer Tools → Services, or an automation). Provide the password only to this service.
-2. On success the session file is rewritten with a **new access token only**. `device_id` and `pickle_key` are unchanged. The crypto store is reused.
-3. If the homeserver would return a different `device_id`, the new token is **not** written (`device_mismatch`). The old session remains. This is not a new-device upgrade path.
-
-The password never appears in events, log lines, or service return values.
-
-### Hard logout (`hard_logout`)
-
-The token is invalid and this is **not** a soft logout. Setup **fails**. Do **not** reuse the old crypto store.
-
-1. Revoke the old device on the homeserver if you still can.
-2. Delete `<config>/.storage/matrix_e2ee_session.json` **and** `<config>/.storage/matrix_e2ee_store/`.
-3. Delete the integration in **Settings → Devices & Services**, then add it again through the UI so first login creates a **new** device.
-4. Run SAS again (`start_verification` / `confirm_verification`). Old history cannot be decrypted.
-
-### Crypto store missing (`store_missing`)
-
-Treat this as a new device. The session JSON is not enough to recover Megolm history. Delete the leftover session file, then follow the hard-logout steps (new login + SAS). Do not copy an old store onto a new device.
-
-### Leaked keys or stolen host
-
-1. Revoke the old Matrix device on the homeserver.
-2. Destroy the local session file and crypto store (same paths as above).
-3. First login creates a new device.
-4. SAS-verify devices that should be trusted. Previous ciphertext is not recoverable.
-
-### Migrating to a new Home Assistant host (legitimate move)
-
-1. Stop Home Assistant on the old host (or disable the integration) so the bot is not connected from two places.
-2. Copy **both** `<config>/.storage/matrix_e2ee_session.json` and `<config>/.storage/matrix_e2ee_store/` to the same paths on the new host. They must stay a matched pair.
-3. Install the same `matrix_e2ee` version under `custom_components` on the new host and restart.
-4. Re-add the integration through **Settings → Devices & Services** (the flow still asks for a password; with the session file present, the client restores the same `device_id` instead of creating a new one). If the store or session is missing or mismatched, treat it as a new device and re-verify.
-
-### Short-lived / refresh tokens (`refresh_token_unsupported`)
-
-This integration does not rotate refresh tokens. If login or `reauthenticate` would receive a refresh token or a short-lived access token (`expires_in_ms`), the integration refuses to persist the session. Use a long-lived access token (standard password login without token refresh).
 
 ## Roadmap
 

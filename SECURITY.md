@@ -1,8 +1,8 @@
 # Security
 
-> Language: [English](SECURITY.md) | [中文](SECURITY.zh.md)
+[English](SECURITY.md) | [中文](SECURITY.zh.md)
 
-`matrix_e2ee` runs a dedicated Matrix bot as a Home Assistant custom integration with end-to-end encryption. This document records the trust model and the two supported device-verification paths.
+`matrix_e2ee` runs a dedicated Matrix bot with end-to-end encryption. Here is the trust model and how device verification works.
 
 ## Trust boundary
 
