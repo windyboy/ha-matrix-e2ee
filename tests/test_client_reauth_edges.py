@@ -71,6 +71,7 @@ async def test_reauthenticate_rejects_invalid_or_unsafe_responses(
         elif case == "device_mismatch":
             nio.login_device_id = "OTHER_DEVICE"
         elif case == "missing_token":
+
             async def no_token_login(password, device_name=""):
                 nio.user_id = client.session.user_id
                 nio.device_id = client.session.device_id

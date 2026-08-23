@@ -103,7 +103,10 @@ async def test_ready_and_done_helpers_handle_missing_transport_and_send_errors(
         client_module,
         "_to_device_message",
         lambda type_, recipient, recipient_device, content: SimpleNamespace(
-            type=type_, recipient=recipient, recipient_device=recipient_device, content=content
+            type=type_,
+            recipient=recipient,
+            recipient_device=recipient_device,
+            content=content,
         ),
     )
 
@@ -132,7 +135,9 @@ async def test_ready_and_done_helpers_handle_missing_transport_and_send_errors(
     await client.async_stop()
 
 
-async def test_to_device_handler_ignores_invalid_events_and_fails_closed(tmp_path) -> None:
+async def test_to_device_handler_ignores_invalid_events_and_fails_closed(
+    tmp_path,
+) -> None:
     """Invalid to-device input is ignored or reported without trusting devices."""
     client, nio = await _client(tmp_path)
 
@@ -142,7 +147,9 @@ async def test_to_device_handler_ignores_invalid_events_and_fails_closed(tmp_pat
     )
     await client.handle_to_device_event(
         SimpleNamespace(
-            type="m.key.verification.key", sender="@stranger:example.org", transaction_id=TXN
+            type="m.key.verification.key",
+            sender="@stranger:example.org",
+            transaction_id=TXN,
         )
     )
     await client.handle_to_device_event(
@@ -163,7 +170,9 @@ async def test_to_device_handler_ignores_invalid_events_and_fails_closed(tmp_pat
     await client.async_stop()
 
 
-async def test_to_device_handler_reports_missing_or_unacceptable_start(tmp_path) -> None:
+async def test_to_device_handler_reports_missing_or_unacceptable_start(
+    tmp_path,
+) -> None:
     """Starts with no SAS or a failing accept are not treated as verification success."""
     client, nio = await _client(tmp_path)
     start = SimpleNamespace(
@@ -213,7 +222,9 @@ def test_device_and_sas_helpers_tolerate_incomplete_nio_objects(tmp_path) -> Non
     assert client._sas_emojis(SimpleNamespace(get_emoji=emoji_failure)) is None
     client.nio = SimpleNamespace(device_store={PEER: "invalid"})
     assert client.list_known_devices() == []
-    client.nio = SimpleNamespace(device_store={PEER: {DEVICE: SimpleNamespace(verified=True)}})
+    client.nio = SimpleNamespace(
+        device_store={PEER: {DEVICE: SimpleNamespace(verified=True)}}
+    )
     assert client.list_known_devices() == [
         {"user_id": PEER, "device_id": DEVICE, "verified": True}
     ]
@@ -313,8 +324,16 @@ def test_protocol_error_code_classification_covers_error_families() -> None:
     class OtherError(Exception):
         pass
 
-    assert client_module._verification_error_code(TimeoutError()) == "verification_timeout"
-    assert client_module._verification_error_code(LocalProtocolError()) == "invalid_transaction"
-    assert client_module._verification_error_code(UnverifiedDeviceError()) == "unverified_device"
+    assert (
+        client_module._verification_error_code(TimeoutError()) == "verification_timeout"
+    )
+    assert (
+        client_module._verification_error_code(LocalProtocolError())
+        == "invalid_transaction"
+    )
+    assert (
+        client_module._verification_error_code(UnverifiedDeviceError())
+        == "unverified_device"
+    )
     assert client_module._send_error_code(EncryptionError()) == "encryption_unavailable"
     assert client_module._send_error_code(OtherError()) == "send_failed"

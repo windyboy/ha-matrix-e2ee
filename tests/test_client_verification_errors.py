@@ -64,11 +64,13 @@ async def test_start_verification_rejects_protocol_failures(
     if case == "unavailable":
         nio.start_key_verification = None
     elif case == "raises":
+
         async def start_raises(_device):
             raise RuntimeError("network unavailable")
 
         nio.start_key_verification = start_raises
     elif case == "error_response":
+
         class StartError:
             pass
 
@@ -77,6 +79,7 @@ async def test_start_verification_rejects_protocol_failures(
 
         nio.start_key_verification = start_error
     elif case == "missing_transaction":
+
         async def starts_without_sas(_device):
             return object()
 
@@ -134,11 +137,13 @@ async def test_confirm_verification_rejects_protocol_failures(
         nio.confirm_short_auth_string = None
         nio.confirm_key_verification = None
     elif case == "raises":
+
         async def confirm_raises(_transaction_id):
             raise RuntimeError("send failed")
 
         nio.confirm_short_auth_string = confirm_raises
     elif case == "error_response":
+
         class ConfirmError:
             pass
 
@@ -169,11 +174,13 @@ async def test_cancel_verification_rejects_protocol_failures(
     if case != "missing_transaction":
         nio.key_verifications[TXN] = FakeSas(TXN, USER, DEVICE)
     if case == "raises":
+
         async def cancel_raises(_transaction_id, reject=False):
             raise RuntimeError("send failed")
 
         nio.cancel_key_verification = cancel_raises
     elif case == "error_response":
+
         class CancelError:
             pass
 

@@ -63,12 +63,19 @@ async def test_verification_services_emit_events_and_surface_errors(
     hass.bus.async_listen(EVENT_ERROR, lambda event: errors.append(event.data))
 
     calls = [
-        (SERVICE_START_VERIFICATION, {ATTR_USER_ID: "@peer:example.org", ATTR_DEVICE_ID: "DEV"}),
+        (
+            SERVICE_START_VERIFICATION,
+            {ATTR_USER_ID: "@peer:example.org", ATTR_DEVICE_ID: "DEV"},
+        ),
         (SERVICE_CONFIRM_VERIFICATION, {ATTR_TRANSACTION_ID: "txn"}),
         (SERVICE_CANCEL_VERIFICATION, {ATTR_TRANSACTION_ID: "txn"}),
         (
             SERVICE_VERIFY_DEVICE_BY_FINGERPRINT,
-            {ATTR_USER_ID: "@peer:example.org", ATTR_DEVICE_ID: "DEV", ATTR_ED25519: "key"},
+            {
+                ATTR_USER_ID: "@peer:example.org",
+                ATTR_DEVICE_ID: "DEV",
+                ATTR_ED25519: "key",
+            },
         ),
         (SERVICE_REAUTHENTICATE, {ATTR_PASSWORD: "password"}),
     ]
