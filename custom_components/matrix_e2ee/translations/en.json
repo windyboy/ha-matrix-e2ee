@@ -53,11 +53,12 @@
         "menu_options": {
           "access_controls": "Access controls",
           "verify_device": "Verify device"
-        }
+        },
+        "description": "Current bot-side trust: **{verified_peer_count}** verified peer device(s).\n\n{verified_peers_list}\n\n{trust_note}"
       },
       "verify_device": {
         "title": "Verify device",
-        "description": "In your Matrix client (Element), open Settings → Sessions, select \"Home Assistant matrix_e2ee\", and click Verify. This window waits for the verification and shows the emojis to compare."
+        "description": "In your Matrix client (Element), open Settings → Sessions, select \"Home Assistant matrix_e2ee\", and click Verify. This window waits for the verification and shows the emojis to compare.\n\n---\nCurrent bot-side trust: **{verified_peer_count}** device(s).\n{verified_peers_list}\n\n{trust_note}"
       },
       "access_controls": {
         "title": "Access controls",
@@ -93,13 +94,21 @@
       "verification_failed": "Device verification failed.",
       "verification_canceled": "Device verification was canceled.",
       "verification_timeout": "Device verification timed out.",
-      "verification_complete": "Device verification complete."
+      "verification_complete": {
+        "title": "Device verification complete",
+        "description": "Verification complete. The bot now trusts **{verified_peer_count}** peer device(s):\n\n{verified_peers_list}\n\n{trust_note}"
+      }
     }
   },
   "entity": {
     "event": {
       "bot_activity": {
         "name": "Bot activity"
+      }
+    },
+    "binary_sensor": {
+      "verified_peers": {
+        "name": "Verified peers"
       }
     }
   }

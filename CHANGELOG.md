@@ -5,6 +5,18 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.14] - 2026-08-26
+
+### Added (W1N-220)
+
+- **Verified peers** diagnostic binary sensor (`binary_sensor.*_verified_peers`): on/off state when the bot trusts at least one peer device, with `verified_peer_count` and capped `verified_peers` attributes (no secrets).
+- Options Flow Configure menu and verification wizard now show current bot-side trust (count, peer list, and trust note) on init, verify wait, and successful completion.
+- Fingerprint trust (`verify_device_by_fingerprint`) now notifies state listeners so diagnostic entities refresh without restart.
+
+### Documentation
+
+- Document the Verified peers entity in `USAGE` and point verification success to the entity and Configure trust summary in `DEVICE_VERIFICATION` (EN + zh-Hans).
+
 ## [0.3.13] - 2026-08-22
 
 ### Fixed
@@ -71,6 +83,7 @@ Incremental SAS wizard, peer-initiated verification, and related fixes. See git 
 - M3: SAS services and events.
 - M4: soft logout / `reauthenticate`, store-loss runbook, diagnostics foundation.
 
+[0.3.14]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.14
 [0.3.13]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.13
 [0.3.11]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.11
 [0.3.10]: https://github.com/windyboy/ha-matrix-e2ee/releases/tag/v0.3.10

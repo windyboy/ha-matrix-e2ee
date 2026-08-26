@@ -100,6 +100,17 @@ The integration exposes a diagnostic connectivity entity:
 - **On**: bot is connected and not soft-logged-out
 - **Attributes** (no secrets): `soft_logged_out`, `device_id`, `known_device_count`, `verified_peer_count`, `verified_peers` (up to 10 `{user_id, device_id}` pairs; peer devices only, never the bot itself)
 
+### Verified peers binary sensor
+
+The integration also exposes a diagnostic trust indicator:
+
+- **Entity**: `binary_sensor.*_verified_peers` (name: **Verified peers**)
+- **Category**: diagnostic
+- **On**: the bot trusts at least one peer Matrix device (`verified_peer_count > 0`)
+- **Attributes** (no secrets): `verified_peer_count`, `verified_peers` (same capped peer list as above)
+
+The Connection entity behavior is unchanged: it still reports connectivity on/off and keeps the verified-peer attributes from W1N-194.
+
 ### Bot activity event
 
 `event.*_bot_activity` records the latest accepted activity with event types

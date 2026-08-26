@@ -1030,6 +1030,7 @@ class MatrixE2EEClient:
                 ERROR_ENCRYPTION_UNAVAILABLE, "device verification is unavailable"
             )
         verify(device)
+        self._notify(self._state_listeners)
 
     async def async_confirm_verification(self, transaction_id: str) -> None:
         """Confirm SAS emojis match. This is the only path that verifies a device."""
