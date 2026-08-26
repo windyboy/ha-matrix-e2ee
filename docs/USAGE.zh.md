@@ -100,6 +100,17 @@ automation:
 - **开启 (On)**：机器人已连接且未处于软退出状态
 - **属性**（无机密）：`soft_logged_out`、`device_id`、`known_device_count`、`verified_peer_count`、`verified_peers`（最多 10 组 `{user_id, device_id}` 对；仅对端设备，不包含机器人自身）
 
+### 已验证对端二进制传感器
+
+本集成还提供一个诊断信任指示实体：
+
+- **实体**：`binary_sensor.*_verified_peers`（名称：**已验证对端**）
+- **类别**：diagnostic
+- **开启 (On)**：机器人至少信任一个对端 Matrix 设备（`verified_peer_count > 0`）
+- **属性**（无机密）：`verified_peer_count`、`verified_peers`（与上文相同的对端列表上限）
+
+连接实体的行为不变：仍报告连接开/关，并保留 W1N-194 中的已验证对端属性。
+
 ### 机器人活动事件实体
 
 `event.*_bot_activity` 记录最新接收到的活动，事件类型包括 `message`、`command` 和 `verification_done`。它与连接传感器归属于同一个机器人设备，采用推送驱动；不暴露任何消息正文或密钥材料。

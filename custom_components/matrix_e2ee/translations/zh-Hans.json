@@ -53,11 +53,12 @@
         "menu_options": {
           "access_controls": "访问控制",
           "verify_device": "验证设备"
-        }
+        },
+        "description": "当前机器人侧信任：**{verified_peer_count}** 个已验证对端设备。\n\n{verified_peers_list}\n\n{trust_note}"
       },
       "verify_device": {
         "title": "验证设备",
-        "description": "在你的 Matrix 客户端（Element）中打开 设置 → 会话，选择「Home Assistant matrix_e2ee」，点击 验证。此窗口会自动等待验证开始，并显示需要比对的 emoji。"
+        "description": "在 Matrix 客户端（Element）中打开：设置 → 会话，选择「Home Assistant matrix_e2ee」，然后点击验证。此窗口会等待验证并显示用于比较的 emoji。\n\n---\n当前机器人侧信任：**{verified_peer_count}** 个设备。\n{verified_peers_list}\n\n{trust_note}"
       },
       "access_controls": {
         "title": "访问控制",
@@ -93,13 +94,21 @@
       "verification_failed": "设备验证失败。",
       "verification_canceled": "设备验证已取消。",
       "verification_timeout": "设备验证超时。",
-      "verification_complete": "设备验证完成。"
+      "verification_complete": {
+        "title": "设备验证完成",
+        "description": "验证完成。机器人现在信任 **{verified_peer_count}** 个对端设备：\n\n{verified_peers_list}\n\n{trust_note}"
+      }
     }
   },
   "entity": {
     "event": {
       "bot_activity": {
         "name": "机器人活动"
+      }
+    },
+    "binary_sensor": {
+      "verified_peers": {
+        "name": "已验证对端"
       }
     }
   }

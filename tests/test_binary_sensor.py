@@ -61,6 +61,14 @@ def _binary_sensor_states(hass: HomeAssistant) -> list:
     return [s for s in hass.states.async_all() if s.domain == "binary_sensor"]
 
 
+def _entity_id_for_suffix(hass: HomeAssistant, suffix: str) -> str:
+    registry = er.async_get(hass)
+    for entity in registry.entities.values():
+        if entity.unique_id and entity.unique_id.endswith(suffix):
+            return entity.entity_id
+    raise AssertionError(f"No binary_sensor entity with suffix {suffix!r}")
+
+
 async def test_binary_sensor_reports_connected(
     hass: HomeAssistant, tmp_path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -72,8 +80,10 @@ async def test_binary_sensor_reports_connected(
     await hass.async_block_till_done()
 
     states = _binary_sensor_states(hass)
-    assert len(states) == 1
-    state = states[0]
+    assert len(states) == 2
+    connection_id = _entity_id_for_suffix(hass, "_connection")
+    state = hass.states.get(connection_id)
+    assert state is not None
     assert state.state == "on"
 
     attrs = state.attributes
@@ -90,7 +100,7 @@ async def test_binary_sensor_reports_connected(
         for device in registry.devices.values()
     )
 
-    entity_id = state.entity_id
+    entity_id = connection_id
 
     # The connectivity sensor is a diagnostic entity.
     registry_entry = er.async_get(hass).entities[entity_id]
@@ -102,6 +112,55 @@ async def test_binary_sensor_reports_connected(
     # Unloading leaves the diagnostic entity unavailable (the registry keeps it
     # for restore, but the integration no longer reports it).
     assert hass.states.get(entity_id).state == "unavailable"
+
+
+async def test_verified_peers_sensor_off_when_no_trust(
+    hass: HomeAssistant, tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(matrix_e2ee, "_NIO_CLIENT_FACTORY", FakeNio)
+    await _seed_session(tmp_path)
+    entry = _make_entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id) is True
+    await hass.async_block_till_done()
+
+    entity_id = _entity_id_for_suffix(hass, "_verified_peers")
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == "off"
+    assert state.attributes["verified_peer_count"] == 0
+    assert state.attributes["verified_peers"] == []
+
+    await hass.config_entries.async_unload(entry.entry_id)
+
+
+async def test_verified_peers_sensor_on_after_peer_verified(
+    hass: HomeAssistant, tmp_path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(matrix_e2ee, "_NIO_CLIENT_FACTORY", FakeNio)
+    await _seed_session(tmp_path)
+    entry = _make_entry(hass)
+    assert await hass.config_entries.async_setup(entry.entry_id) is True
+    await hass.async_block_till_done()
+
+    client = hass.data[DOMAIN][entry.entry_id]
+    nio = client.nio
+    nio.add_device("@peer2:example.org", "PEER2ABC", verified=True)
+
+    client._notify(client._state_listeners)
+    await hass.async_block_till_done()
+
+    entity_id = _entity_id_for_suffix(hass, "_verified_peers")
+    state = hass.states.get(entity_id)
+    assert state is not None
+    assert state.state == "on"
+    assert state.attributes["verified_peer_count"] == 1
+    assert state.attributes["verified_peers"] == [
+        {"user_id": "@peer2:example.org", "device_id": "PEER2ABC"}
+    ]
+    for secret in ("ed25519", "curve25519", "key", "token", "pickle", "secret"):
+        assert secret not in str(state.attributes).lower()
+
+    await hass.config_entries.async_unload(entry.entry_id)
 
 
 async def test_connection_health_soft_logout(

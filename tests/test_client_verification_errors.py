@@ -117,6 +117,26 @@ async def test_fingerprint_verification_rejects_invalid_prerequisites(
     await client.async_stop()
 
 
+async def test_fingerprint_verify_notifies_state_listeners(tmp_path) -> None:
+    """Fingerprint trust refreshes diagnostic entities via state listeners."""
+    client, nio = await _client(tmp_path)
+    nio.add_device(USER, DEVICE)
+    calls: list[int] = []
+
+    def listener() -> None:
+        calls.append(1)
+
+    remove = client.add_state_listener(listener)
+    try:
+        await client.async_verify_device_by_fingerprint(
+            USER, DEVICE, "ED25519_DEVICE_KEY"
+        )
+    finally:
+        remove()
+    assert len(calls) == 1
+    await client.async_stop()
+
+
 @pytest.mark.parametrize(
     ("case", "expected"),
     [

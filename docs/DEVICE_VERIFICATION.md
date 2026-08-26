@@ -24,6 +24,8 @@ In the recommended workflow, Element initiates verification. The Home Assistant 
 6. If they match, choose **They match** in Home Assistant. If they differ, choose **They do not match** and cancel the verification.
 7. Wait for Home Assistant to report that verification is complete. Element should also show the device as verified.
 
+After a successful verification, check the **Verified peers** diagnostic entity (`binary_sensor.*_verified_peers`) or reopen **Configure** to see the bot-side trust count and peer list. This reflects trust in the bot's crypto store, not Element's own verified badge.
+
 A successful SAS verification establishes mutual trust: Element trusts the bot device, and the bot trusts the current Element device. Devices are not trusted automatically, even when they belong to the same Matrix account.
 
 ## Advanced: confirm through Developer Tools

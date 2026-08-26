@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.matrix_e2ee import config_flow
+from custom_components.matrix_e2ee.client import MatrixE2EEClient
 from custom_components.matrix_e2ee.const import (
     CONF_ALLOWED_ROOMS,
     CONF_ALLOWED_USERS,
@@ -184,6 +185,38 @@ def test_format_emojis_numbers_seven_pairs() -> None:
 def test_format_emojis_numbers_from_one() -> None:
     rendered = config_flow._format_emojis([["⚓", "Anchor"], ["☎️", "Telephone"]])
     assert rendered == "1. ⚓  Anchor\n2. ☎️  Telephone"
+
+
+def test_trust_status_placeholders_empty() -> None:
+    placeholders = config_flow._trust_status_placeholders(None)
+    assert placeholders["verified_peer_count"] == "0"
+    assert placeholders["verified_peers_list"] == "(none)"
+    assert "Element" in placeholders["trust_note"]
+    for secret in ("ed25519", "token", "pickle", "password", "secret"):
+        assert secret not in str(placeholders).lower()
+
+
+async def test_trust_status_placeholders_with_peers(tmp_path) -> None:
+    client = MatrixE2EEClient(
+        config_dir=tmp_path,
+        homeserver=HS,
+        username=USERNAME,
+        password="pw",
+        allowed_rooms=[],
+        allowed_users=[],
+        verification_peer_users=[],
+        command_prefix="!",
+        fire_event=lambda event_type, data: None,
+        nio_client_factory=FakeNio,
+    )
+    await client.async_start()
+    client.nio.add_device("@peer:example.org", "DEV1", verified=True)
+    placeholders = config_flow._trust_status_placeholders(client)
+    await client.async_stop()
+    assert placeholders["verified_peer_count"] == "1"
+    assert placeholders["verified_peers_list"] == "- @peer:example.org / DEV1"
+    for secret in ("ed25519", "token", "pickle", "password", "secret"):
+        assert secret not in str(placeholders).lower()
 
 
 async def test_import_creates_entry_with_options(hass: HomeAssistant) -> None:

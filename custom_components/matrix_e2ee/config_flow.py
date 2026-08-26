@@ -77,6 +77,34 @@ def _csv_to_list(value: str) -> list[str]:
     return [item.strip() for item in value.split(",") if item.strip()]
 
 
+def _format_verified_peer_lines(verified_peers: list[dict[str, Any]]) -> str:
+    """One line per peer: '- @user:server / DEVICEID'. Empty store -> '(none)'."""
+    if not verified_peers:
+        return "(none)"
+    return "\n".join(
+        f"- {peer['user_id']} / {peer['device_id']}" for peer in verified_peers
+    )
+
+
+def _trust_status_placeholders(client: MatrixE2EEClient | None) -> dict[str, str]:
+    """Return verified_peer_count, verified_peers_list, trust_note for strings."""
+    trust_note = (
+        "Shows devices this bot trusts. Element's own verified badge is separate."
+    )
+    if client is None:
+        return {
+            "verified_peer_count": "0",
+            "verified_peers_list": "(none)",
+            "trust_note": trust_note,
+        }
+    health = client.connection_health()
+    return {
+        "verified_peer_count": str(health["verified_peer_count"]),
+        "verified_peers_list": _format_verified_peer_lines(health["verified_peers"]),
+        "trust_note": trust_note,
+    }
+
+
 def _format_emojis(emojis: list[list[str]] | None) -> str:
     """Render SAS emoji/number pairs as a numbered list for the compare step."""
     if not emojis:
@@ -318,6 +346,7 @@ class MatrixE2EEOptionsFlow(OptionsFlowWithReload):
         return self.async_show_menu(
             step_id="init",
             menu_options=["access_controls", "verify_device"],
+            description_placeholders=_trust_status_placeholders(self._client()),
         )
 
     async def async_step_access_controls(
@@ -382,6 +411,7 @@ class MatrixE2EEOptionsFlow(OptionsFlowWithReload):
             step_id="wait_inbound",
             progress_action="wait_inbound",
             progress_task=self.hass.async_create_task(self._wait_for_inbound()),
+            description_placeholders=_trust_status_placeholders(client),
         )
 
     async def async_step_wait_inbound(
@@ -434,7 +464,10 @@ class MatrixE2EEOptionsFlow(OptionsFlowWithReload):
         snapshot = self._snapshot()
         if snapshot is not None and snapshot["verified"]:
             self._txn = None
-            return self.async_abort(reason="verification_complete")
+            return self.async_abort(
+                reason="verification_complete",
+                description_placeholders=_trust_status_placeholders(client),
+            )
         return self.async_show_progress(
             step_id="wait_done",
             progress_action="verify",
@@ -466,7 +499,10 @@ class MatrixE2EEOptionsFlow(OptionsFlowWithReload):
         snapshot = self._snapshot()
         self._txn = None
         if snapshot is not None and snapshot["verified"]:
-            return self.async_abort(reason="verification_complete")
+            return self.async_abort(
+                reason="verification_complete",
+                description_placeholders=_trust_status_placeholders(self._client()),
+            )
         if snapshot is not None and snapshot["canceled"]:
             return self.async_abort(reason="verification_canceled")
         return self.async_abort(reason="verification_timeout")
