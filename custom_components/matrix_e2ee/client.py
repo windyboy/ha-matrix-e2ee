@@ -765,13 +765,14 @@ class MatrixE2EEClient:
         if catch_up and sync is not None:
             await _maybe_await(sync(timeout=30_000, full_state=True))
         self.enable_command_callbacks()
+        if not catch_up and sync is not None:
+            # An incremental sync omits joined rooms with no new events, so they
+            # never enter nio.rooms and room_send fails with "No such room".
+            await _maybe_await(sync(timeout=30_000, since=since, full_state=True))
         sync_forever = getattr(nio, "sync_forever", None)
         if sync_forever is None:
             return
-        kwargs: dict[str, Any] = {"timeout": 30_000}
-        if since and not catch_up:
-            kwargs["since"] = since
-        await _maybe_await(sync_forever(**kwargs))
+        await _maybe_await(sync_forever(timeout=30_000))
 
     def enable_verification_callbacks(self) -> None:
         """Register to-device SAS handlers. Accepting the protocol is not auto-trust."""

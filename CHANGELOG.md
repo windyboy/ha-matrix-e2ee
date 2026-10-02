@@ -5,6 +5,16 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.15] - 2026-10-02
+
+### Fixed
+
+- After a restart with a stored sync token, sends failed with `LocalProtocolError: No such room` for joined rooms that had no new events, because the incremental sync never loaded them into `nio.rooms`. Restore now runs one full-state sync from the stored token (callbacks already registered, so commands sent during downtime are still dispatched) before continuing incrementally.
+
+### Changed
+
+- Commands may carry one leading addressing prefix (`hass: !ping`), as chat clients add when replying to or mentioning the bot. The command word must still start with the configured prefix.
+
 ## [0.3.14] - 2026-08-26
 
 ### Added (W1N-220)

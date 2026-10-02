@@ -246,6 +246,7 @@ async def test_first_sync_does_not_replay_then_restore_uses_sync_token(tmp_path)
     await first.async_sync_loop()
     nio = created["nio"]
     assert nio.sync_calls == 1
+    assert nio.sync_args[-1] == {"since": None, "full_state": True}
     assert getattr(nio, "sync_callback_count", None) == 0
     assert nio.sync_forever_calls[-1]["callback_count"] >= 1
     await first.async_stop()
@@ -258,8 +259,11 @@ async def test_first_sync_does_not_replay_then_restore_uses_sync_token(tmp_path)
     nio2 = created2["nio"]
     nio2.loaded_sync_token = "s_persisted_token"
     await second.async_sync_loop()
-    assert nio2.sync_calls == 0
-    assert nio2.sync_forever_calls[-1]["since"] == "s_persisted_token"
+    # Incremental sync alone leaves rooms without new events out of nio.rooms.
+    assert nio2.sync_calls == 1
+    assert nio2.sync_args[-1] == {"since": "s_persisted_token", "full_state": True}
+    assert nio2.sync_callback_count >= 1
+    assert nio2.sync_forever_calls[-1]["since"] is None
     assert nio2.sync_forever_calls[-1]["callback_count"] >= 1
     second.handle_incoming_event(
         SimpleNamespace(room_id=ROOM, encrypted=True),

@@ -163,6 +163,7 @@ class FakeNio:
         self.send_error: Exception | None = None
         self.closed = False
         self.sync_calls = 0
+        self.sync_args: list[dict] = []
         self.olm: FakeOlm | None = FakeOlm(nio=self)
         self.keys_query_calls: list[str] = []
         self.pending_devices: dict[str, list[FakeOlmDevice]] = {}
@@ -352,10 +353,13 @@ class FakeNio:
         )
         return object()
 
-    async def sync(self, timeout=0, full_state=None):
+    async def sync(self, timeout=0, since=None, full_state=None):
         self.sync_calls += 1
         self.sync_callback_count = len(self.callbacks)
-        if not self.next_batch:
+        self.sync_args.append({"since": since, "full_state": full_state})
+        if since:
+            self.next_batch = "s_after_full_state"
+        elif not self.next_batch:
             self.next_batch = "s_after_catchup"
         return object()
 

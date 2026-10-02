@@ -29,7 +29,7 @@ Home Assistant **custom** integration that runs a dedicated Matrix bot with a pe
 | [matrix-nio compatibility](docs/NIO_COMPAT.md) ([中文](docs/NIO_COMPAT.zh.md)) | Runtime compatibility fixes and upgrade checklist |
 | [Development notes](docs/DEVELOPMENT.md) ([中文](docs/DEVELOPMENT.zh.md)) | Environment setup, testing, CI, and local install |
 | [Changelog](CHANGELOG.md) | Release history |
-Current release: **v0.3.13** (see `custom_components/matrix_e2ee/manifest.json`).
+Current release: **v0.3.15** (see `custom_components/matrix_e2ee/manifest.json`).
 
 ## Installation
 
@@ -53,7 +53,7 @@ mkdir -p /config/custom_components
 cp -a custom_components/matrix_e2ee /config/custom_components/matrix_e2ee
 ```
 
-**From git** (replace `v0.3.13` with the [release tag](https://github.com/windyboy/ha-matrix-e2ee/releases) you want):
+**From git** (replace `v0.3.15` with the [release tag](https://github.com/windyboy/ha-matrix-e2ee/releases) you want):
 
 ```bash
 git clone --depth 1 --branch v0.3.11 https://github.com/windyboy/ha-matrix-e2ee.git /tmp/ha-matrix-e2ee
