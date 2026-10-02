@@ -80,6 +80,18 @@ def test_room_user_prefix_allowlist():
     assert parse_command("!", "!") is None
 
 
+def test_parse_command_tolerates_addressing_prefix():
+    assert parse_command("hass: !ping", "!") == ("ping", [])
+    assert parse_command("hass:  !light bath on", "!") == ("light", ["bath", "on"])
+    assert parse_command("hass:!ping", "!") == ("ping", [])
+    assert parse_command("  !ping", "!") == ("ping", [])
+    assert parse_command("hass: hello", "!") is None
+    assert parse_command("hass: !", "!") is None
+    assert parse_command("hass:", "!") is None
+    assert parse_command("please hass: !ping", "!") is None
+    assert parse_command("hass: !ping", "") is None
+
+
 @pytest.mark.asyncio
 async def test_first_login_writes_session_only_after_success(tmp_path, caplog):
     factory, created = _factory_holder()
